@@ -1,0 +1,96 @@
+[
+{
+    "function": "action_show_days_off",
+    "description": "Muestra los días festivos y permisos disponibles por la empresa",
+    "arguments": [
+    ]
+}
+,
+{
+    "function": "action_show_holidays",
+    "description": "Muestra la información de los días de vacaciones y asuntos propios que han sido solicitados",
+    "arguments": [
+        {
+            "name": "usercode",
+            "type": "string",
+            "description": "El código de usuario del empleado."
+        }
+    ]
+},
+{
+    "function": "action_show_accruals",
+    "description": "Muestra los saldos de bolsa de horas, lactancia, horas sindicales, horas recuperables, horas compensadas y horas de fuerza mayor.",
+    "arguments": [
+        {
+            "name": "usercode",
+            "type": "string",
+            "description": "El código de usuario del empleado."
+        }
+    ]
+},
+{
+    "function": "action_show_accruals_holidays",
+    "description": "Muestra el saldo de los días de vacaciones y asuntos propios.",
+    "arguments": [
+        {
+            "name": "usercode",
+            "type": "string",
+            "description": "El código de usuario del empleado."
+        }
+    ]
+},
+{
+    "function": "action_show_signings",
+    "description": "Muestra los fichajes realizados.",
+    "arguments": [
+        {
+            "name": "usercode",
+            "type": "string",
+            "description": "El código de usuario del empleado."
+        }, 
+		{
+            "name": "start_date",
+            "type": "string",
+            "description": "Fecha de inicio del periodo. 'None' si no existe"
+        },
+		{
+            "name": "end_date",
+            "type": "string",
+            "description": "Fecha de fin del periodo. 'None' si no existe"
+        }
+    ]
+},
+{
+    "function": "action_make_signing",
+    "description": "Realiza un fichaje.",
+    "arguments": [
+        {
+            "name": "usercode",
+            "type": "string",
+            "description": "El código de usuario del empleado."
+        }, 
+		{
+            "name": "start_date",
+            "type": "Time",
+            "description": "Fecha de inicio del periodo. 'None' si no existe"
+        },
+				{
+            "name": "end_date",
+            "type": "Time",
+            "description": "Fecha de fin del periodo. 'None' si no existe"
+        }
+    ]
+}
+,
+{
+    "function": "action_how_horasSindicales",
+    "description": "Procedimiento de como solicitar las horas sindicales",
+    "arguments": [
+        {
+            "name": "identifier",
+            "type": "string",
+            "description": "Identificador de las FAQ"
+        }
+    ]
+}
+]
