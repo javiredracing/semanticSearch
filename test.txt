@@ -1,0 +1,32 @@
+intfloat/multilingual-e5-base
+Space in disk = 1.1gb
+Max seq lenght = 512
+Embedding size = 768
+
+Test: ConvenioColectivo.txt
+Number of docs = 176
+
+CPU:
+Time encoding docs = 100.484 seg
+Time calculating result = 0.1718 seg
+Good results
+
+GPU:
+Time encoding docs = 5.9 seg
+Time calculating result = 0.015625 seg
+Good results
+
+----------------------------
+
+intfloat/multilingual-e5-small
+Space in disk = 400 mbs
+Max seq lenght = 512
+Embedding size = 384
+
+Test: ConvenioColectivo.txt
+Number of docs = 176
+
+CPU:
+Time encoding docs = 53.9375 seg
+Time calculating result = 0.125 seg
+Good results
