@@ -46,7 +46,7 @@ def semantic_search(text):
     hits = util.semantic_search(query_emb, doc_emb, top_k=5, score_function=util.cos_sim)
     hits = hits[0]      #Get the hits for the first query
     for hit in hits:
-        print("(Score: {:.4f})".format(hit['score']), docs[hit['corpus_id']])
+        print("(Score: {:.4f})".format(hit['score']), docs[hit['corpus_id']].lstrip("passage: "))
 
     end = time.process_time()
     print(end - start)
