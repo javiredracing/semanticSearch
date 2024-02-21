@@ -37,11 +37,12 @@ def loadDoc(name=None):
             text = text + line
 
     docs = text.split("\n")
+    docs = [i.replace('\r\n', '') for i in docs if len(i.strip())>0]    #clean
     #docs = ["passage: "+ i for i in docs if i]
     print("Number of paragraphs: ",len(docs))
     start = time.process_time()
     #doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True) 
-    doc_emb = model.encode(docs, convert_to_tensor=True, normalize_embeddings=True, show_progress_bar=True)    
+    doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True)    
     end = time.process_time()
     print("Processing time:",end - start)
     return docs, doc_emb
@@ -51,7 +52,7 @@ def semantic_search(text):
     #Encode query
     start = time.process_time()
     #query_emb = model.encode(["query: " + text], normalize_embeddings=True, show_progress_bar=True)
-    query_emb = model.encode([get_detailed_instruct(text)], convert_to_tensor=True, normalize_embeddings=True, show_progress_bar=True)
+    query_emb = model.encode([get_detailed_instruct(text)], normalize_embeddings=True, show_progress_bar=True)
     #Compute dot score between query and all document embeddings
     #scores = util.cos_sim(query_emb, doc_emb)[0]    
     #scores = util.dot_score(query_emb, doc_emb)[0]#.cpu().tolist()      
@@ -69,7 +70,7 @@ def semantic_search(text):
 
 def showEmbeddings(embeddings_array, query_embeddings):
 
-    concatenated = np.concatenate((embeddings_array.cpu(),query_embeddings.cpu()), axis=0)
+    concatenated = np.concatenate((embeddings_array,query_embeddings), axis=0)
     print(concatenated.shape)
     pca_model = PCA(n_components = 2)
     pca_model.fit(concatenated)
