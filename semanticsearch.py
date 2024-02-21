@@ -3,11 +3,16 @@
 from sentence_transformers import SentenceTransformer, util
 import time
 import torch
-#Load the model
-model = SentenceTransformer('intfloat/multilingual-e5-base')    #(1.011GB)
-#model = SentenceTransformer('intfloat/multilingual-e5-small') #(over 400mbs)
+from sklearn.decomposition import PCA
+import plotly.express as px
+import numpy as np
 
-print("Max Sequence Length:", model.max_seq_length)
+#Load the model
+#model = SentenceTransformer('intfloat/multilingual-e5-base')    #(1.011GB)
+#model = SentenceTransformer('intfloat/multilingual-e5-small') #(over 400mbs)
+model = SentenceTransformer('intfloat/multilingual-e5-large-instruct') #(over 400mbs)
+print(model)
+#print("Max Sequence Length:", model.max_seq_length)
 print("Torch version:",torch.__version__)
 print("Is CUDA enabled?",torch.cuda.is_available())
 #mrm8488/distiluse-base-multilingual-cased-v2-finetuned-stsb_multi_mt-es
@@ -16,6 +21,10 @@ print("Is CUDA enabled?",torch.cuda.is_available())
 #sentence-transformers/multi-qa-MiniLM-L6-cos-v1
 docs = []
 doc_emb = None
+
+def get_detailed_instruct(query: str) -> str:
+    task_description = 'Given a web search query, retrieve relevant passages that answer the query'
+    return f'Instruct: {task_description}\nQuery: {query}'
 
 def loadDoc(name=None):
     text = ""
@@ -28,9 +37,11 @@ def loadDoc(name=None):
             text = text + line
 
     docs = text.split("\n")
-    docs = ["passage: "+ i for i in docs if i]
+    #docs = ["passage: "+ i for i in docs if i]
+    print("Number of paragraphs: ",len(docs))
     start = time.process_time()
-    doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True)     
+    #doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True) 
+    doc_emb = model.encode(docs, convert_to_tensor=True, normalize_embeddings=True, show_progress_bar=True)    
     end = time.process_time()
     print("Processing time:",end - start)
     return docs, doc_emb
@@ -39,19 +50,51 @@ def loadDoc(name=None):
 def semantic_search(text):
     #Encode query
     start = time.process_time()
-    query_emb = model.encode("query: " + text, normalize_embeddings=True)
+    #query_emb = model.encode(["query: " + text], normalize_embeddings=True, show_progress_bar=True)
+    query_emb = model.encode([get_detailed_instruct(text)], convert_to_tensor=True, normalize_embeddings=True, show_progress_bar=True)
     #Compute dot score between query and all document embeddings
     #scores = util.cos_sim(query_emb, doc_emb)[0]    
     #scores = util.dot_score(query_emb, doc_emb)[0]#.cpu().tolist()      
     hits = util.semantic_search(query_emb, doc_emb, top_k=5, score_function=util.cos_sim)
+    end = time.process_time()
+    print("Processing results time:", end - start)
     hits = hits[0]      #Get the hits for the first query
     for hit in hits:
         print("(Score: {:.4f})".format(hit['score']), docs[hit['corpus_id']].lstrip("passage: "))
 
-    end = time.process_time()
-    print(end - start)
-    #showResults(scores)        
+    #showResults(scores)
+    showEmbeddings(doc_emb,query_emb)
     
+    
+
+def showEmbeddings(embeddings_array, query_embeddings):
+
+    concatenated = np.concatenate((embeddings_array.cpu(),query_embeddings.cpu()), axis=0)
+    print(concatenated.shape)
+    pca_model = PCA(n_components = 2)
+    pca_model.fit(concatenated)
+    pca_embeddings_values = pca_model.transform(concatenated)
+    print(pca_embeddings_values.shape)
+    
+    colors = ["paragraph" for i in docs]
+    colors.append("query")
+    
+    names = ["paragraph_" + str(i) for i,item in enumerate(docs)]
+    names.append("query")
+    
+    fig = px.scatter(
+        x = pca_embeddings_values[:,0], 
+        y = pca_embeddings_values[:,1],
+        hover_name = names,
+        title = 'Text embeddings', width = 800, height = 600,
+        #color_discrete_sequence = plotly.colors.qualitative.Alphabet_r
+        color = colors
+    )
+
+    #fig.update_layout(
+    #    xaxis_title = 'first component', 
+    #    yaxis_title = 'second component')
+    fig.show()
 '''
 def showResults(scores):
     #Combine docs & scores
