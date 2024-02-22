@@ -4,13 +4,14 @@ from sentence_transformers import SentenceTransformer, util
 import time
 import torch
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 import plotly.express as px
 import numpy as np
 
 #Load the model
 #model = SentenceTransformer('intfloat/multilingual-e5-base')    #(1.011GB)
 #model = SentenceTransformer('intfloat/multilingual-e5-small') #(over 400mbs)
-model = SentenceTransformer('intfloat/multilingual-e5-large-instruct') #(over 400mbs)
+model = SentenceTransformer('intfloat/multilingual-e5-large-instruct',device="cuda") #(over 400mbs)
 print(model)
 #print("Max Sequence Length:", model.max_seq_length)
 print("Torch version:",torch.__version__)
@@ -42,7 +43,7 @@ def loadDoc(name=None):
     print("Number of paragraphs: ",len(docs))
     start = time.process_time()
     #doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True) 
-    doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True)    
+    doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True,device="cuda")    
     end = time.process_time()
     print("Processing time:",end - start)
     return docs, doc_emb
@@ -52,7 +53,7 @@ def semantic_search(text):
     #Encode query
     start = time.process_time()
     #query_emb = model.encode(["query: " + text], normalize_embeddings=True, show_progress_bar=True)
-    query_emb = model.encode([get_detailed_instruct(text)], normalize_embeddings=True, show_progress_bar=True)
+    query_emb = model.encode([get_detailed_instruct(text)], normalize_embeddings=True, show_progress_bar=True, device="cuda")
     #Compute dot score between query and all document embeddings
     #scores = util.cos_sim(query_emb, doc_emb)[0]    
     #scores = util.dot_score(query_emb, doc_emb)[0]#.cpu().tolist()      
@@ -66,17 +67,27 @@ def semantic_search(text):
     #showResults(scores)
     showEmbeddings(doc_emb,query_emb)
     
-    
 
+def pca_reduction(embeddings):    
+    print(embeddings.shape)
+    pca_model = PCA(n_components = 2)
+    pca_model.fit(embeddings)
+    pca_embeddings_values = pca_model.transform(embeddings)
+    print(pca_embeddings_values.shape)
+    return pca_embeddings_values
+
+def tSNE_reduction(embeddings):
+    print(embeddings.shape)
+    tsne_model = TSNE(n_components=2, random_state=42)
+    tsne_embeddings_values = tsne_model.fit_transform(embeddings)
+    print(tsne_embeddings_values.shape)
+    return tsne_embeddings_values
+    
 def showEmbeddings(embeddings_array, query_embeddings):
 
     concatenated = np.concatenate((embeddings_array,query_embeddings), axis=0)
-    print(concatenated.shape)
-    pca_model = PCA(n_components = 2)
-    pca_model.fit(concatenated)
-    pca_embeddings_values = pca_model.transform(concatenated)
-    print(pca_embeddings_values.shape)
-    
+    #embeddings_values = pca_reduction(concatenated)
+    embeddings_values = tSNE_reduction(concatenated)
     colors = ["paragraph" for i in docs]
     colors.append("query")
     
@@ -84,8 +95,8 @@ def showEmbeddings(embeddings_array, query_embeddings):
     names.append("query")
     
     fig = px.scatter(
-        x = pca_embeddings_values[:,0], 
-        y = pca_embeddings_values[:,1],
+        x = embeddings_values[:,0], 
+        y = embeddings_values[:,1],
         hover_name = names,
         title = 'Text embeddings', width = 800, height = 600,
         #color_discrete_sequence = plotly.colors.qualitative.Alphabet_r
@@ -109,8 +120,6 @@ docs, doc_emb = loadDoc()
 query = "¿De cuanto tiempo es la jornada de trabajo?"
 print(query)
 semantic_search(query)
-
-
 
 
 
