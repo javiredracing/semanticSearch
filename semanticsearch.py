@@ -11,7 +11,17 @@ import numpy as np
 #Load the model
 #model = SentenceTransformer('intfloat/multilingual-e5-base')    #(1.011GB)
 #model = SentenceTransformer('intfloat/multilingual-e5-small') #(over 400mbs)
-model = SentenceTransformer('intfloat/multilingual-e5-large-instruct',device="cuda") #(over 400mbs)
+model = SentenceTransformer('intfloat/multilingual-e5-large-instruct',device="cuda") #(over ****mbs)
+
+#model = SentenceTransformer('BAAI/bge-m3',device="cuda") #2.27gbs
+#model = SentenceTransformer('jinaai/jina-embeddings-v2-base-es',device="cuda", trust_remote_code=True) #(over 400mbs)
+
+
+#modelPath = "jina_model"
+
+#model.save(modelPath)
+#model = SentenceTransformer(modelPath,device="cuda",  trust_remote_code=True)
+#model.max_seq_length = 1024
 print(model)
 #print("Max Sequence Length:", model.max_seq_length)
 print("Torch version:",torch.__version__)
@@ -42,8 +52,7 @@ def loadDoc(name=None):
     #docs = ["passage: "+ i for i in docs if i]
     print("Number of paragraphs: ",len(docs))
     start = time.process_time()
-    #doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True) 
-    doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True,device="cuda")    
+    doc_emb = model.encode(docs,  normalize_embeddings=True, show_progress_bar=True, device="cuda")   
     end = time.process_time()
     print("Processing time:",end - start)
     return docs, doc_emb
@@ -54,15 +63,19 @@ def semantic_search(text):
     start = time.process_time()
     #query_emb = model.encode(["query: " + text], normalize_embeddings=True, show_progress_bar=True)
     query_emb = model.encode([get_detailed_instruct(text)], normalize_embeddings=True, show_progress_bar=True, device="cuda")
+    #query_emb = model.encode([text], normalize_embeddings=True, show_progress_bar=True, device="cuda")
     #Compute dot score between query and all document embeddings
     #scores = util.cos_sim(query_emb, doc_emb)[0]    
     #scores = util.dot_score(query_emb, doc_emb)[0]#.cpu().tolist()      
     hits = util.semantic_search(query_emb, doc_emb, top_k=5, score_function=util.cos_sim)
+    #hits = util.semantic_search(query_emb, doc_emb, top_k=5, score_function=util.dot_score)
+    
     end = time.process_time()
     print("Processing results time:", end - start)
     hits = hits[0]      #Get the hits for the first query
     for hit in hits:
-        print("(Score: {:.4f})".format(hit['score']), docs[hit['corpus_id']].lstrip("passage: "))
+        #print("(Score: {:.4f})".format(hit['score']), docs[hit['corpus_id']].lstrip("passage: "))
+        print("(Score: {:.4f})".format(hit['score']), docs[hit['corpus_id']])
 
     #showResults(scores)
     showEmbeddings(doc_emb,query_emb)
@@ -78,7 +91,8 @@ def pca_reduction(embeddings):
 
 def tSNE_reduction(embeddings):
     print(embeddings.shape)
-    tsne_model = TSNE(n_components=2, random_state=42)
+    tsne_model = TSNE(n_components=2, perplexity=15, random_state=42, init='random', learning_rate=200, metric = 'cosine')
+    #tsne_model = TSNE(n_components=2, random_state=42,metric = 'cosine')
     tsne_embeddings_values = tsne_model.fit_transform(embeddings)
     print(tsne_embeddings_values.shape)
     return tsne_embeddings_values
@@ -98,7 +112,7 @@ def showEmbeddings(embeddings_array, query_embeddings):
         x = embeddings_values[:,0], 
         y = embeddings_values[:,1],
         hover_name = names,
-        title = 'Text embeddings', width = 800, height = 600,
+        title = 'Embeddings e5', width = 800, height = 600,
         #color_discrete_sequence = plotly.colors.qualitative.Alphabet_r
         color = colors
     )
@@ -120,6 +134,15 @@ docs, doc_emb = loadDoc()
 query = "¿De cuanto tiempo es la jornada de trabajo?"
 print(query)
 semantic_search(query)
+# print("****************")
+# query = "¿Cuantos días de asuntos propios tengo?"
+# print(query)
+# semantic_search(query)
+# print("****************")
+# query = "dias de vacaciones"
+# print(query)
+# semantic_search(query)
+# print("****************")
 
 
 
