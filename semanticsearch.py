@@ -52,7 +52,7 @@ def loadDoc(name=None):
     #docs = ["passage: "+ i for i in docs if i]
     print("Number of paragraphs: ",len(docs))
     start = time.process_time()
-    doc_emb = model.encode(docs,  normalize_embeddings=True, show_progress_bar=True, device="cuda")   
+    doc_emb = model.encode(docs, normalize_embeddings=True, show_progress_bar=True, device="cuda", batch_size=8)
     end = time.process_time()
     print("Processing time:",end - start)
     return docs, doc_emb
